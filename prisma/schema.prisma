@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── 매장 ────────────────────────────────────────────────────────────────────
+
+model Store {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String
+  phone     String?
+  imageUrl  String?
+  isOpen    Boolean  @default(true)
+  openAt    String   @default("08:00") // "HH:mm"
+  closeAt   String   @default("22:00") // "HH:mm"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menus       Menu[]
+  orders      Order[]
+  pickupSlots PickupSlot[]
+  etaConfig   EtaConfig?
+
+  @@map("stores")
+}
+
+// ─── 메뉴 카테고리 ───────────────────────────────────────────────────────────
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  menus Menu[]
+
+  @@map("categories")
+}
+
+// ─── 메뉴 ────────────────────────────────────────────────────────────────────
+
+model Menu {
+  id          Int      @id @default(autoincrement())
+  storeId     Int
+  categoryId  Int?
+  name        String
+  description String?
+  price       Int                        // 원 단위 정수
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  prepTimeSec Int      @default(180)     // 단독 제조 예상 시간(초)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store      Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category   Category?    @relation(fields: [categoryId], references: [id])
+  options    MenuOption[]
+  orderItems OrderItem[]
+
+  @@map("menus")
+}
+
+// ─── 메뉴 옵션 그룹 (e.g. 사이즈, 온도) ─────────────────────────────────────
+
+model MenuOption {
+  id         Int     @id @default(autoincrement())
+  menuId     Int
+  name       String                       // e.g. "사이즈"
+  isRequired Boolean @default(false)
+  maxSelect  Int     @default(1)
+
+  menu    Menu               @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  choices MenuOptionChoice[]
+
+  @@map("menu_options")
+}
+
+model MenuOptionChoice {
+  id          Int    @id @default(autoincrement())
+  optionId    Int
+  name        String                       // e.g. "Large"
+  extraPrice  Int    @default(0)
+
+  option           MenuOption        @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  orderItemChoices OrderItemChoice[]
+
+  @@map("menu_option_choices")
+}
+
+// ─── 주문 ────────────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  PENDING    // 접수 대기
+  ACCEPTED   // 매장 수락
+  PREPARING  // 제조 중
+  READY      // 픽업 준비 완료
+  COMPLETED  // 픽업 완료
+  CANCELLED  // 취소
+}
+
+enum PickupType {
+  NOW       // 즉시 픽업
+  SCHEDULED // 예약 픽업
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  storeId       Int
+  orderNumber   String      @unique              // 표시용 번호 (e.g. "A-042")
+  customerName  String
+  customerPhone String?
+  status        OrderStatus @default(PENDING)
+  pickupType    PickupType  @default(NOW)
+  pickupSlotId  Int?                             // SCHEDULED 일 때만 사용
+  totalPrice    Int
+  memo          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  store      Store       @relation(fields: [storeId], references: [id])
+  pickupSlot PickupSlot? @relation(fields: [pickupSlotId], references: [id])
+  items      OrderItem[]
+  eta        OrderEta?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id       Int @id @default(autoincrement())
+  orderId  Int
+  menuId   Int
+  quantity Int @default(1)
+  price    Int                                    // 주문 당시 단가(옵션 포함)
+
+  order   Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menu    Menu              @relation(fields: [menuId], references: [id])
+  choices OrderItemChoice[]
+
+  @@map("order_items")
+}
+
+model OrderItemChoice {
+  id       Int @id @default(autoincrement())
+  itemId   Int
+  choiceId Int
+
+  item   OrderItem        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  choice MenuOptionChoice @relation(fields: [choiceId], references: [id])
+
+  @@map("order_item_choices")
+}
+
+// ─── 예상 대기시간(ETA) ───────────────────────────────────────────────────────
+
+// 매장별 ETA 계산 파라미터
+model EtaConfig {
+  id            Int @id @default(autoincrement())
+  storeId       Int @unique
+  baseBufferSec Int @default(60)   // 기본 버퍼(초)
+  perOrderSec   Int @default(120)  // 대기 주문 1건당 추가 시간(초)
+  maxCapacity   Int @default(20)   // 동시 처리 가능 최대 주문 수
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@map("eta_configs")
+}
+
+// 주문 접수 시 ETA 스냅샷
+model OrderEta {
+  id           Int      @id @default(autoincrement())
+  orderId      Int      @unique
+  estimatedSec Int                                // 예상 대기 시간(초)
+  estimatedAt  DateTime @default(now())           // ETA 계산 시각
+  readyAt      DateTime                           // 예상 완료 절대 시각
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_etas")
+}
+
+// ─── 예약 픽업 슬롯 ───────────────────────────────────────────────────────────
+
+model PickupSlot {
+  id        Int      @id @default(autoincrement())
+  storeId   Int
+  date      DateTime @db.Date              // 슬롯 날짜
+  startTime String                         // "HH:mm"
+  endTime   String                         // "HH:mm"
+  capacity  Int      @default(5)           // 슬롯 내 최대 주문 수
+  isBlocked Boolean  @default(false)       // 매장 수동 차단
+  createdAt DateTime @default(now())
+
+  store  Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([storeId, date, startTime])
+  @@map("pickup_slots")
+}

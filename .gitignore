@@ -1,0 +1,31 @@
+# 의존성
+node_modules/
+frontend/node_modules/
+
+# 환경 변수
+.env
+.env.*
+!.env.example
+
+# 빌드 결과물
+dist/
+build/
+frontend/dist/
+frontend/build/
+
+# TypeScript 빌드 캐시
+*.tsbuildinfo
+
+# Prisma
+/generated/prisma
+
+# 로그
+*.log
+npm-debug.log*
+
+# macOS
+.DS_Store
+
+# 에디터
+.vscode/
+.idea/
