@@ -70,12 +70,12 @@
 
 | 고객 첫 화면 (매장별 ETA) | 메뉴 및 예약 픽업 화면 |
 |---|---|
-| ![고객 첫 화면 — 매장별 실시간 ETA 및 혼잡도](./docs/store-list.png) | ![메뉴 선택 및 예약 픽업 화면](./docs/store-menu.png) |
+| ![고객 첫 화면 — 매장별 실시간 ETA 및 혼잡도](./docs/01-store-home.png) | ![메뉴 선택 및 예약 픽업 화면](./docs/02-store-menu-reservation.png) |
 | 매장별 혼잡도(여유 / 보통 / 혼잡)와 예상 대기시간을 주문 전에 확인할 수 있습니다. | 즉시 픽업과 예약 픽업을 선택할 수 있으며, 원하는 시간대에 맞춰 사전 주문이 가능합니다. |
 
 | 관리자 주문 관리 대시보드 | 제조 예정 탭 및 reminder badge |
 |---|---|
-| ![관리자 실시간 주문 대시보드](./docs/admin-dashboard.png) | ![제조 예정 탭 — 예약 주문 reminder badge](./docs/admin-upcoming.png) |
+| ![관리자 실시간 주문 대시보드](./docs/03-admin-dashboard.png) | ![제조 예정 탭 — 예약 주문 reminder badge](./docs/04-admin-upcoming-orders.png) |
 | 실시간으로 주문 현황을 확인하고 상태를 전환할 수 있습니다. KPI 카드로 오늘의 운영 현황을 한눈에 파악합니다. | 예약 주문을 별도 탭으로 분리하고, 픽업 시각까지 남은 시간을 reminder badge로 표시해 제조 타이밍을 놓치지 않도록 합니다. |
 
 <br>
