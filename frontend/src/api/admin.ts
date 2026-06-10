@@ -2,7 +2,6 @@ import type { Store, OrderResponse } from '../types'
 
 const BASE = '/api'
 
-// OrderResponse에 없지만 실제 API가 반환하는 필드를 포함한 확장 타입
 export interface AdminOrder extends OrderResponse {
   createdAt: string
   customerPhone: string | null
